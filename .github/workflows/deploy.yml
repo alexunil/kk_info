@@ -1,0 +1,98 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # -------------------------------------------------------
+  # Job 1: Docker-Image bauen und zu ghcr.io pushen
+  # -------------------------------------------------------
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write  # Erlaubt Push zu ghcr.io mit GITHUB_TOKEN
+
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}  # Automatisch verfügbar, kein Secret nötig
+
+      - name: Extract image metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha   # GitHub Actions Cache für schnellere Builds
+          cache-to: type=gha,mode=max
+
+  # -------------------------------------------------------
+  # Job 2: Auf Hetzner-Server deployen
+  # -------------------------------------------------------
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Compose-Datei und Solr-Config auf den Server kopieren
+      - name: Copy config files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.prod.yml,solr_config/"
+          target: /opt/kk-info
+
+      # Image pullen und Container neu starten
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: IMAGE_NAME,REGISTRY,GITHUB_ACTOR,GITHUB_TOKEN
+          script: |
+            cd /opt/kk-info
+
+            # Bei ghcr.io anmelden (nötig wenn Package privat ist)
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            # Image-Name mit aktuellem Tag setzen
+            export KK_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+
+            # Image aktualisieren und Container neu starten
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
+
+            # Alte Images aufräumen
+            docker image prune -f

@@ -1,0 +1,63 @@
+services:
+  solr:
+    image: solr:9.7-slim
+    container_name: kk-info-solr
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr-data:/var/solr
+      - ./solr_config/conf:/opt/solr/server/solr/configsets/_default/conf:ro
+    environment:
+      - SOLR_HEAP=512m
+    command:
+      - solr-precreate
+      - kk-info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8983/solr/kk-info/admin/ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    labels:
+      - "com.kk-info.description=Solr Search Engine for Carrier Data"
+
+  kk-info-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kk-info-api
+    ports:
+      - "9000:9000"
+    volumes:
+      # Persistent database (only for imports)
+      - ./kk_info.db:/data/kk_info.db
+      # Read-only access to data files (for re-import if needed)
+      - ./kostentraegerdateien:/app/kostentraegerdateien:ro
+      # Optional: Mount app code for development (comment out for production)
+      # - ./app:/app/app
+    environment:
+      - DATABASE_URL=sqlite:////data/kk_info.db
+      - SOLR_URL=http://solr:8983/solr/kk-info
+    depends_on:
+      solr:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "com.kk-info.description=Krankenkassen Info API"
+      - "com.kk-info.version=1.0.0"
+
+volumes:
+  solr-data:
+    name: kk-info-solr-data
+
+# Optional: Add a network for future services
+networks:
+  default:
+    name: kk-info-network
