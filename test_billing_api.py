@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """Test script for the new billing center API endpoint"""
-import sys
-import json
-from app.database import SessionLocal
-from app.main import app, BillingCenterRequest
+from app.main import app
 from fastapi.testclient import TestClient
 
 # Create test client
@@ -41,7 +38,7 @@ def test_billing_center(krankenkasse: str):
     if data['hinweis']:
         print(f"\n⚠️  {data['hinweis']}")
 
-    print(f"\n📍 Abrechnungsstelle(n):")
+    print("\n📍 Abrechnungsstelle(n):")
     for center in data['abrechnungsstellen']:
         print(f"\n  • {center['name']}")
         print(f"    IK: {center['ik']}")
@@ -51,7 +48,7 @@ def test_billing_center(krankenkasse: str):
             print(f"    Adresse: {center['adresse']}")
         print(f"    Anzahl Niederlassungen: {center['anzahl_niederlassungen']}")
 
-    print(f"\n📋 IK-Nummern (erste 10):")
+    print("\n📋 IK-Nummern (erste 10):")
     for ik in data['ik_nummern'][:10]:
         print(f"  - {ik}")
     if len(data['ik_nummern']) > 10:

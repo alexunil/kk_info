@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Find complete billing chain for a health insurance carrier by name"""
-import sys
 import argparse
 from app.database import SessionLocal, Carrier
 
@@ -30,7 +29,7 @@ def find_billing_chain(search_name: str):
                 print(f"   Adresse: {carrier.street}, {carrier.postal_code} {carrier.city}")
 
             # Verfolge die Abrechnungskette
-            print(f"\n   📊 Abrechnungskette:")
+            print("\n   📊 Abrechnungskette:")
             print(f"   └─> START: {carrier.name} (IK: {carrier.ik_number})")
 
             current_ik = carrier.acceptance_center_ik
@@ -65,7 +64,7 @@ def find_billing_chain(search_name: str):
                     break
 
             if not carrier.acceptance_center_ik:
-                print(f"       └─> ✅ ENDPUNKT: Führt eigene Abrechnung durch")
+                print("       └─> ✅ ENDPUNKT: Führt eigene Abrechnung durch")
 
             print()
             print("-" * 70)
