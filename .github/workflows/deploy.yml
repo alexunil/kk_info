@@ -74,7 +74,7 @@ jobs:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.prod.yml,solr_config/"
+          source: "docker-compose.prod.yml"
           target: /home/alg/docker/kk-info
 
       # Image pullen und Container neu starten

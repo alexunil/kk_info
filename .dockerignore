@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+CLAUDE.md
+API_BEISPIELE.md
+*.md
+
+# Scripts
+test_*.py
+demo_*.py
+find_billing_chain.py
+*.sh
+
+# Logs
+*.log
+nohup.out
+
+# Database (will be mounted as volume)
+*.db
+*.db-journal
+
+# Environment
+.env
+.env.local
+
+# Temporary files
+tmp/
+.DS_Store
+Thumbs.db
