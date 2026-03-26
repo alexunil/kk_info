@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """Demo script to show API functionality"""
-import sys
-import time
 import urllib.request
 import json
 
