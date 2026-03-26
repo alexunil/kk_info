@@ -74,8 +74,8 @@ jobs:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.prod.yml,solr_config/"
-          target: /opt/kk-info
+          source: "docker-compose.prod.yml"
+          target: /home/alg/docker/kk-info
 
       # Image pullen und Container neu starten
       - name: Deploy via SSH
@@ -86,7 +86,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: IMAGE_NAME,REGISTRY,GITHUB_ACTOR,GITHUB_TOKEN
           script: |
-            cd /opt/kk-info
+            cd /home/alg/docker/kk-info
 
             # Bei ghcr.io anmelden (nötig wenn Package privat ist)
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin

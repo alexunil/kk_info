@@ -28,6 +28,10 @@ ENV/
 uvicorn.log
 nohup.out
 
+# Claude
+CLAUDE.md
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
